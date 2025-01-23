@@ -36,6 +36,24 @@ public class TestPKICertificate {
     }
 
     /**
+     * Get the distinguished name (DN) of the subject of the certificate.
+     *
+     * @return the subject DN as a string
+     */
+    public String getSubjectDN() {
+        return certificate.certificate().getSubjectDN().getName();
+    }
+
+    /**
+     * Get the serial number of the certificate.
+     *
+     * @return the serial number of the certificate as an int
+     */
+    public int getSerialNumber() {
+        return certificate.certificate().getSerialNumber().intValueExact();
+    }
+
+    /**
      * Get a reference to a keystore file containing the certificate, creating
      * a temporary file on disk if not already created.
      *
@@ -87,6 +105,15 @@ public class TestPKICertificate {
     }
 
     /**
+     * Get the certificate in PEM format.
+     *
+     * @return the certificate as a PEM-encoded string
+     */
+    public String getCertPem() {
+        return certificate.certificatePem();
+    }
+
+    /**
      * Get a reference to a PEM file containing the unencrypted private key, creating
      * a temporary file on disk if not already created.
      *
@@ -109,6 +136,15 @@ public class TestPKICertificate {
         }
         keyPemFile = TestPKI.createPemFile(baseDirectory, commonName, ".key", Collections.singleton(certificate), c -> c.privateKeyPkcs8Pem().getBytes());
         return keyPemFile;
+    }
+
+    /**
+     * Get the unencrypted private key in PKCS#8 PEM format.
+     *
+     * @return the private key as a PEM-encoded string
+     */
+    public String getKeyPem() {
+        return certificate.privateKeyPkcs8Pem();
     }
 
     /**
