@@ -1,254 +1,311 @@
 package com.dsingley.testpki;
 
-import lombok.Getter;
 import lombok.NonNull;
 import lombok.SneakyThrows;
+import lombok.Synchronized;
+import lombok.extern.slf4j.Slf4j;
 import okhttp3.tls.HandshakeCertificates;
 import okhttp3.tls.HeldCertificate;
 
+import javax.naming.ldap.LdapName;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.X509TrustManager;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.net.InetAddress;
+import java.nio.file.Files;
 import java.security.KeyStore;
-import java.security.SecureRandom;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
-import java.util.Arrays;
-import java.util.Base64;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
-import java.util.StringJoiner;
 import java.util.TreeSet;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
-import javax.naming.ldap.LdapName;
-import javax.net.ssl.SSLSocketFactory;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
+import java.util.function.Function;
 
 /**
  * The TestPKI class initializes a test Public Key Infrastructure (PKI) environment
- * with root CA, intermediate CA, server, and client certificates.
+ * with root and intermediate certificate authorities.
  * <p>
- * It generates truststore, server keystore, and client keystore files
- * and provides an SSL socket factory for server-side TLS communication.
+ * It can create persistent or temporary PKCS12 keystore and/or PEM files for
+ * trusted certificates, server certificates and keys, and client certificates and keys.
+ * <p>
+ * It can provide {@link SSLSocketFactory} and {@link X509TrustManager} instances to use
+ * for TLS communication.
  *
  * @see <a href="https://github.com/square/okhttp/tree/master/okhttp-tls">https://github.com/square/okhttp/tree/master/okhttp-tls</a>
  */
+@Slf4j
 public class TestPKI {
     private static final String ORGANIZATIONAL_UNIT = "TestPKI";
     private static final String TRUSTSTORE_PASSWORD = "changeit";
 
+    private final KeyType keyType;
+    private final AtomicInteger serialNumber;
+    private final Map<String, HeldCertificate> caCertificates;
     private final HeldCertificate rootCertificate;
     private final HeldCertificate intermediateCertificate;
-    private final HeldCertificate serverCertificate;
-    private final HeldCertificate clientCertificate;
-    private final File truststoreFile;
-    private final File caFile;
-    @Getter private final String serverKeystorePassword;
-    private final File serverKeystoreFile;
-    private final File serverKeyFile;
-    private final File serverCertFile;
-    @Getter private final String clientKeystorePassword;
-    private final File clientKeystoreFile;
-    private final File clientKeyFile;
-    private final File clientCertFile;
+    private final Map<String, TestPKICertificate> issuedCertificates;
+    private File truststoreFile;
+    private File caPemFile;
 
     public static void main(String[] args) {
-        if (args.length < 1) {
-            String keyTypes = Arrays.stream(KeyType.values())
-                    .map(Enum::name)
-                    .collect(Collectors.joining("|"));
-            throw new IllegalArgumentException(String.format("Usage: java %s <baseDirectory> [%s]", TestPKI.class.getName(), keyTypes));
+        CommandLineOptions commandLineOptions = CommandLineOptions.parse(args);
+        TestPKI testPKI = new TestPKI(commandLineOptions.getKeyType());
+
+        File truststoreFile = testPKI.getTruststoreFile(commandLineOptions.getBaseDirectory());
+        File caPemFile = testPKI.getCaPemFile(commandLineOptions.getBaseDirectory());
+
+        TestPKICertificate serverCertificate = testPKI.getServerCertificate();
+        File serverKeystoreFile = serverCertificate.getKeystoreFile(commandLineOptions.getBaseDirectory());
+        File serverCertPemFile = serverCertificate.getCertPemFile(commandLineOptions.getBaseDirectory());
+        File serverKeyPemFile = serverCertificate.getKeyPemFile(commandLineOptions.getBaseDirectory());
+
+        TestPKICertificate clientCertificate = testPKI.getClientCertificate();
+        File clientKeystoreFile = clientCertificate.getKeystoreFile(commandLineOptions.getBaseDirectory());
+        File clientCertPemFile = clientCertificate.getCertPemFile(commandLineOptions.getBaseDirectory());
+        File clientKeyPemFile = clientCertificate.getKeyPemFile(commandLineOptions.getBaseDirectory());
+
+        if (commandLineOptions.isExport()) {
+            String prefix = commandLineOptions.getVariableNamePrefix();
+            if (prefix == null) {
+                prefix = "";
+            } else if (!prefix.isEmpty() && !prefix.endsWith("_")) {
+                prefix = prefix.toUpperCase() + "_";
+            }
+            System.out.printf("export %sTRUSTSTORE_PATH=%s%n", prefix, truststoreFile.getAbsolutePath());
+            System.out.printf("export %sTRUSTSTORE_PASSWORD='%s'%n", prefix, testPKI.getTruststorePassword());
+            System.out.printf("export %sCA_PATH='%s'%n", prefix, caPemFile.getAbsolutePath());
+            System.out.printf("export %sSERVER_KEYSTORE_PATH=%s%n", prefix, serverKeystoreFile.getAbsolutePath());
+            System.out.printf("export %sSERVER_KEYSTORE_PASSWORD='%s'%n", prefix, serverCertificate.getKeystorePassword());
+            System.out.printf("export %sSERVER_CERT_PATH=%s%n", prefix, serverCertPemFile.getAbsolutePath());
+            System.out.printf("export %sSERVER_KEY_PATH=%s%n", prefix, serverKeyPemFile.getAbsolutePath());
+            System.out.printf("export %sCLIENT_KEYSTORE_PATH=%s%n", prefix, clientKeystoreFile.getAbsolutePath());
+            System.out.printf("export %sCLIENT_KEYSTORE_PASSWORD='%s'%n", prefix, clientCertificate.getKeystorePassword());
+            System.out.printf("export %sCLIENT_CERT_PATH=%s%n", prefix, clientCertPemFile.getAbsolutePath());
+            System.out.printf("export %sCLIENT_KEY_PATH=%s%n", prefix, clientKeyPemFile.getAbsolutePath());
         }
-
-        File baseDirectory = new File(args[0]);
-        KeyType keyType =  args.length > 1 ? KeyType.valueOf(args[1]) : KeyType.ECDSA_256;
-
-        TestPKI testPKI = new TestPKI(keyType, baseDirectory);
-
-        System.out.printf("export TESTPKI_TRUSTSTORE_PATH=%s%n", testPKI.getTruststorePath());
-        System.out.printf("export TESTPKI_TRUSTSTORE_PASSWORD='%s'%n", testPKI.getTruststorePassword());
-        System.out.printf("export TESTPKI_SERVER_KEYSTORE_PATH=%s%n", testPKI.getServerKeystorePath());
-        System.out.printf("export TESTPKI_SERVER_KEYSTORE_PASSWORD='%s'%n", testPKI.getServerKeystorePassword());
-        System.out.printf("export TESTPKI_CLIENT_KEYSTORE_PATH=%s%n", testPKI.getClientKeystorePath());
-        System.out.printf("export TESTPKI_CLIENT_KEYSTORE_PASSWORD='%s'%n", testPKI.getClientKeystorePassword());
-    }
-
-    public TestPKI() {
-        this(KeyType.ECDSA_256, null);
     }
 
     @SneakyThrows
-    public TestPKI(@NonNull KeyType keyType, File baseDirectory) {
-        if (baseDirectory != null && (!baseDirectory.isDirectory() || !baseDirectory.canWrite())) {
-            throw new IllegalArgumentException("baseDirectory, if provided, must be an existing writable directory: " + baseDirectory);
-        }
+    public TestPKI(@NonNull KeyType keyType) {
+        this.keyType = keyType;
+        serialNumber = new AtomicInteger(1);
+        caCertificates = new LinkedHashMap<>();
 
-        AtomicInteger serialNumber = new AtomicInteger(1);
-
-        rootCertificate = buildHeldCertificate(keyType, new HeldCertificate.Builder()
+        rootCertificate = newCertificate(new HeldCertificate.Builder()
                 .commonName("Root CA")
                 .organizationalUnit(ORGANIZATIONAL_UNIT)
                 .serialNumber(serialNumber.getAndIncrement())
                 .certificateAuthority(1)
         );
+        caCertificates.put("root", rootCertificate);
 
-        intermediateCertificate = buildHeldCertificate(keyType, new HeldCertificate.Builder()
+        intermediateCertificate = newCertificate(new HeldCertificate.Builder()
                 .commonName("Intermediate CA")
                 .organizationalUnit(ORGANIZATIONAL_UNIT)
                 .serialNumber(serialNumber.getAndIncrement())
                 .certificateAuthority(0)
                 .signedBy(rootCertificate)
         );
-
-        HeldCertificate.Builder serverCertificateBuilder = new HeldCertificate.Builder()
-                .commonName("server")
-                .organizationalUnit(ORGANIZATIONAL_UNIT)
-                .serialNumber(serialNumber.getAndIncrement())
-                .signedBy(intermediateCertificate);
-        Set<String> subjectAlternativeNames = new TreeSet<>();
-        subjectAlternativeNames.add("localhost");
-        subjectAlternativeNames.add(InetAddress.getLocalHost().getHostName());
-        subjectAlternativeNames.add(InetAddress.getLocalHost().getCanonicalHostName());
-        for (String san : subjectAlternativeNames) {
-            serverCertificateBuilder.addSubjectAlternativeName(san);
-        }
-        serverCertificate = buildHeldCertificate(keyType, serverCertificateBuilder);
-
-        clientCertificate = buildHeldCertificate(keyType, new HeldCertificate.Builder()
-                .commonName("client")
-                .organizationalUnit(ORGANIZATIONAL_UNIT)
-                .serialNumber(serialNumber.getAndIncrement())
-                .signedBy(intermediateCertificate)
-        );
-
-        Map<String, HeldCertificate> caCertificates = new LinkedHashMap<>();
-        caCertificates.put("root", rootCertificate);
         caCertificates.put("intermediate", intermediateCertificate);
 
-        truststoreFile = createKeystoreFile(baseDirectory, "truststore", TRUSTSTORE_PASSWORD, caCertificates, null);
-        caFile = createPemFile(baseDirectory, "ca", ".pem", caCertificates.values());
-
-        serverKeystorePassword = randomPassword();
-        serverKeystoreFile = createKeystoreFile(baseDirectory, "server", serverKeystorePassword, caCertificates, serverCertificate);
-        serverKeyFile = createKeyPemFile(baseDirectory, "server", serverCertificate);
-        serverCertFile = createPemFile(baseDirectory, "server", ".cert", Collections.singleton(serverCertificate));
-
-        clientKeystorePassword = randomPassword();
-        clientKeystoreFile = createKeystoreFile(baseDirectory, "client", clientKeystorePassword, caCertificates, clientCertificate);
-        clientKeyFile = createKeyPemFile(baseDirectory, "client", clientCertificate);
-        clientCertFile = createPemFile(baseDirectory, "client", ".cert", Collections.singleton(clientCertificate));
+        issuedCertificates = new ConcurrentHashMap<>();
     }
 
-    public SSLSocketFactory getServerSSLSocketFactory() {
-        return new HandshakeCertificates.Builder()
-                .addTrustedCertificate(rootCertificate.certificate())
-                .addTrustedCertificate(intermediateCertificate.certificate())
-                .heldCertificate(serverCertificate)
-                .build()
-                .sslSocketFactory();
+    /**
+     * Get a reference to a keystore file containing CA certificates, creating
+     * a temporary file on disk if not already created.
+     *
+     * @return the truststore file as a File object
+     */
+    public File getTruststoreFile() {
+        return getTruststoreFile(null);
     }
 
-    public SSLSocketFactory getClientSSLSocketFactory() {
-        return new HandshakeCertificates.Builder()
-                .addTrustedCertificate(rootCertificate.certificate())
-                .heldCertificate(clientCertificate) // , intermediateCertificate.certificate())
-                .build()
-                .sslSocketFactory();
+    /**
+     * Get a reference to a keystore file containing CA certificates, creating
+     * the file on disk in the specified directory if not already created.
+     *
+     * @param baseDirectory the directory in which to create the file, will create a temporary file if null
+     * @return the truststore file as a File object
+     */
+    @Synchronized
+    public File getTruststoreFile(File baseDirectory) {
+        if (truststoreFile != null) {
+            return truststoreFile;
+        }
+        truststoreFile = createKeystoreFile(baseDirectory, "truststore", TRUSTSTORE_PASSWORD, null);
+        return truststoreFile;
     }
 
-    public X509TrustManager getClientTrustManager() {
-        return new HandshakeCertificates.Builder()
-                .addTrustedCertificate(rootCertificate.certificate())
-                .heldCertificate(clientCertificate) // , intermediateCertificate.certificate())
-                .build()
-                .trustManager();
-    }
-
-    public String getTruststorePath() {
-        return truststoreFile.getAbsolutePath();
-    }
-
+    /**
+     * Retrieve the password for the truststore file accessible via
+     * {@link TestPKI#getTruststoreFile()} or {@link TestPKI#getTruststoreFile(File)}
+     *
+     * @return the truststore password as a String
+     */
     public String getTruststorePassword() {
         return TRUSTSTORE_PASSWORD;
     }
 
-    public String getCaPath() {
-        return caFile.getAbsolutePath();
+    /**
+     * Get a reference to a PEM file containing CA certificates, creating
+     * a temporary file on disk if not already created.
+     *
+     * @return the CA PEM file as a File object
+     */
+    public File getCaPemFile() {
+        return getCaPemFile(null);
     }
 
-    public String getServerKeystorePath() {
-        return serverKeystoreFile.getAbsolutePath();
+    /**
+     * Get a reference to a PEM file containing CA certificates, creating
+     * the file on disk in the specified directory if not already created.
+     *
+     * @param baseDirectory the directory in which to create the file, will create a temporary file if null
+     * @return the CA PEM file as a File object
+     */
+    @Synchronized
+    public File getCaPemFile(File baseDirectory) {
+        if (caPemFile != null) {
+            return caPemFile;
+        }
+        caPemFile = createPemFile(baseDirectory, "ca", ".pem", caCertificates.values(), c -> c.certificatePem().getBytes());
+        return caPemFile;
     }
 
-    public String getServerKeyPath() {
-        return serverKeyFile.getAbsolutePath();
+    /**
+     * Get a reference to a {@link TestPKICertificate} for a default server certificate,
+     * issuing a new certificate if not already created.
+     *
+     * @return the default server certificate as a TestPKICertificate
+     */
+    @SneakyThrows
+    public TestPKICertificate getServerCertificate() {
+        Set<String> subjectAlternativeNames = new TreeSet<>();
+        subjectAlternativeNames.add("localhost");
+        subjectAlternativeNames.add(InetAddress.getLocalHost().getHostName());
+        subjectAlternativeNames.add(InetAddress.getLocalHost().getCanonicalHostName());
+        return getServerCertificate("server", subjectAlternativeNames);
     }
 
-    public String getServerCertPath() {
-        return serverCertFile.getAbsolutePath();
+    /**
+     * Get a reference to a {@link TestPKICertificate} for a server certificate with
+     * the specified common name (CN=), issuing a new certificate if not already created.
+     *
+     * @param commonName the desired common name
+     * @return the server certificate as a TestPKICertificate
+     */
+    public TestPKICertificate getServerCertificate(@NonNull String commonName) {
+        return getServerCertificate(commonName, Collections.emptySet());
     }
 
-    public String getClientKeystorePath() {
-        return clientKeystoreFile.getAbsolutePath();
+    /**
+     * Get a reference to a {@link TestPKICertificate} for a server certificate with
+     * the specified common name (CN=) and subject alternative names (SAN),
+     * issuing a new certificate if not already created.
+     *
+     * @param commonName the desired common name
+     * @param subjectAlternativeNames the desired subject alternative names
+     * @return the server certificate as a TestPKICertificate
+     */
+    public TestPKICertificate getServerCertificate(@NonNull String commonName, @NonNull Set<String> subjectAlternativeNames) {
+        return issuedCertificates.computeIfAbsent(commonName, cn -> new TestPKICertificate(this, commonName, newCertificate(cn, subjectAlternativeNames)));
     }
 
-    public String getClientKeyPath() {
-        return clientKeyFile.getAbsolutePath();
+    /**
+     * Get a reference to a {@link TestPKICertificate} for a default client certificate,
+     * issuing a new certificate if not already created.
+     *
+     * @return the default client certificate as a TestPKICertificate
+     */
+    public TestPKICertificate getClientCertificate() {
+        return getClientCertificate("client");
     }
 
-    public String getClientCertPath() {
-        return clientCertFile.getAbsolutePath();
+    /**
+     * Get a reference to a {@link TestPKICertificate} for a client certificate with
+     * the specified common name (CN=), issuing a new certificate if not already created.
+     *
+     * @param commonName the desired common name
+     * @return the client certificate as a TestPKICertificate
+     */
+    public TestPKICertificate getClientCertificate(@NonNull String commonName) {
+        return issuedCertificates.computeIfAbsent(commonName, cn -> new TestPKICertificate(this, commonName, newCertificate(cn, Collections.emptySet())));
     }
 
-    private static String randomPassword() {
-        byte[] bytes = new byte[20];
-        new SecureRandom().nextBytes(bytes);
-        return Base64.getEncoder().encodeToString(bytes);
+    SSLSocketFactory getSSLSocketFactory(HeldCertificate certificate) {
+        return new HandshakeCertificates.Builder()
+                .addTrustedCertificate(rootCertificate.certificate())
+                .heldCertificate(certificate, intermediateCertificate.certificate())
+                .build()
+                .sslSocketFactory();
     }
 
-    private static HeldCertificate buildHeldCertificate(KeyType keyType, HeldCertificate.Builder builder) {
+    X509TrustManager getTrustManager(HeldCertificate certificate) {
+        return new HandshakeCertificates.Builder()
+                .addTrustedCertificate(rootCertificate.certificate())
+                .heldCertificate(certificate, intermediateCertificate.certificate())
+                .build()
+                .trustManager();
+    }
+
+    private HeldCertificate newCertificate(HeldCertificate.Builder builder) {
         switch (keyType) {
             case ECDSA_256:
                 builder.ecdsa256();
-                return builder.build();
+                break;
             case RSA_2048:
                 builder.rsa2048();
-                return builder.build();
+                break;
             default:
                 throw new RuntimeException("unexpected KeyType: " + keyType.name());
         }
+        HeldCertificate certificate = builder.build();
+        log.info("issued certificate {}: {}", certificate.certificate().getSerialNumber(), certificate.certificate().getSubjectDN());
+        return certificate;
+    }
+
+    private HeldCertificate newCertificate(String commonName, Set<String> subjectAlternativeNames) {
+        HeldCertificate.Builder builder = new HeldCertificate.Builder()
+                .commonName(commonName)
+                .organizationalUnit(ORGANIZATIONAL_UNIT)
+                .serialNumber(serialNumber.getAndIncrement())
+                .signedBy(intermediateCertificate);
+        for (String san : subjectAlternativeNames) {
+            builder.addSubjectAlternativeName(san);
+        }
+        return newCertificate(builder);
     }
 
     @SneakyThrows
-    private static File createKeystoreFile(File baseDirectory, String prefix, String password, Map<String, HeldCertificate> certificateEntryCertificates, HeldCertificate keyEntryCertificate) {
+    File createKeystoreFile(File baseDirectory, String prefix, String password, HeldCertificate keyEntryCertificate) {
         File file = newFile(baseDirectory, prefix, ".pkcs12");
-
         KeyStore keyStore = KeyStore.getInstance("PKCS12");
         keyStore.load(null, password.toCharArray());
-        for (Map.Entry<String, HeldCertificate> entry : certificateEntryCertificates.entrySet()) {
-            keyStore.setCertificateEntry(entry.getKey(), entry.getValue().certificate());
-        }
         if (keyEntryCertificate != null) {
             String alias = getCn(keyEntryCertificate.certificate());
             keyStore.setKeyEntry(alias, keyEntryCertificate.keyPair().getPrivate(), password.toCharArray(), new Certificate[]{keyEntryCertificate.certificate()});
         }
-
+        for (Map.Entry<String, HeldCertificate> entry : caCertificates.entrySet()) {
+            keyStore.setCertificateEntry(entry.getKey(), entry.getValue().certificate());
+        }
         try (FileOutputStream fos = new FileOutputStream(file.getAbsolutePath())) {
             keyStore.store(fos, password.toCharArray());
         }
-
+        log.debug("wrote keystore: {}", file.getAbsolutePath());
         return file;
     }
 
-    @SneakyThrows
-    private static File createPemFile(File baseDirectory, String prefix, String suffix, Collection<HeldCertificate> certificates) {
-        File file = newFile(baseDirectory, prefix, suffix);
 
+    @SneakyThrows
+    static File createPemFile(File baseDirectory, String prefix, String suffix, Collection<HeldCertificate> certificates, Function<HeldCertificate, byte[]> function) {
+        File file = newFile(baseDirectory, prefix, suffix);
         try (FileOutputStream fos = new FileOutputStream(file.getAbsolutePath())) {
             boolean first = true;
             for (HeldCertificate certificate : certificates) {
@@ -257,27 +314,11 @@ public class TestPKI {
                 } else {
                     fos.write("\n".getBytes());
                 }
-                fos.write(getComment(certificate).getBytes());
-                fos.write(certificate.certificatePem().getBytes());
+                fos.write(String.format("# %s%n", certificate.certificate().getSubjectDN().getName()).getBytes());
+                fos.write(function.apply(certificate));
             }
         }
-
-        return file;
-    }
-
-    private static String getComment(HeldCertificate certificate) {
-        return String.format("# %s%n", certificate.certificate().getSubjectDN().getName());
-    }
-
-    @SneakyThrows
-    private static File createKeyPemFile(File baseDirectory, String prefix, HeldCertificate certificate) {
-        File file = newFile(baseDirectory, prefix, ".key");
-
-        try (FileOutputStream fos = new FileOutputStream(file.getAbsolutePath())) {
-            fos.write(String.format("# %s%n", certificate.certificate().getSubjectDN().getName()).getBytes());
-            fos.write(certificate.privateKeyPkcs8Pem().getBytes());
-        }
-
+        log.debug("wrote PEM file: {}", file.getAbsolutePath());
         return file;
     }
 
@@ -285,6 +326,9 @@ public class TestPKI {
     private static File newFile(File baseDirectory, String prefix, String suffix) {
         File file;
         if (baseDirectory != null) {
+            if (!Files.isDirectory(baseDirectory.toPath())) {
+                throw new IllegalArgumentException("baseDirectory must be an existing directory: " + baseDirectory);
+            }
             file = new File(baseDirectory, prefix + suffix);
         } else {
             file = File.createTempFile(prefix + "-", suffix);

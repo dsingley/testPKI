@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration>
+    <Properties>
+        <Property name="LOG_PATTERN">%d{ISO8601} %-5level [%t] %logger{36} %X - %msg%n</Property>
+    </Properties>
+
+    <Appenders>
+        <Console name="console" target="SYSTEM_OUT" follow="true">
+            <PatternLayout pattern="${LOG_PATTERN}"/>
+        </Console>
+    </Appenders>
+
+    <Loggers>
+        <Logger name="com.dsingley.testpki" level="debug" additivity="false">
+            <AppenderRef ref="console"/>
+        </Logger>
+
+        <Logger name="okhttp3" level="debug" additivity="false">
+            <AppenderRef ref="console"/>
+        </Logger>
+
+        <Logger name="mockwebserver3" level="debug" additivity="false">
+            <AppenderRef ref="console"/>
+        </Logger>
+
+        <Root level="warn">
+            <AppenderRef ref="console"/>
+        </Root>
+    </Loggers>
+</Configuration>
