@@ -47,10 +47,10 @@ public class TestPKICertificate {
     /**
      * Get the serial number of the certificate.
      *
-     * @return the serial number of the certificate as an int
+     * @return the serial number of the certificate as a long
      */
-    public int getSerialNumber() {
-        return certificate.certificate().getSerialNumber().intValueExact();
+    public long getSerialNumber() {
+        return certificate.certificate().getSerialNumber().longValueExact();
     }
 
     /**
