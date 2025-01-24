@@ -57,15 +57,15 @@ public class TestPKI {
         CommandLineOptions commandLineOptions = CommandLineOptions.parse(args);
         TestPKI testPKI = new TestPKI(commandLineOptions.getKeyType());
 
-        File truststoreFile = testPKI.getTruststoreFile(commandLineOptions.getBaseDirectory());
-        File caPemFile = testPKI.getCaPemFile(commandLineOptions.getBaseDirectory());
+        File truststoreFile = testPKI.getOrCreateTruststoreFile(commandLineOptions.getBaseDirectory());
+        File caPemFile = testPKI.getOrCreateCaPemFile(commandLineOptions.getBaseDirectory());
 
-        TestPKICertificate serverCertificate = testPKI.getServerCertificate();
+        TestPKICertificate serverCertificate = testPKI.getOrCreateServerCertificate();
         File serverKeystoreFile = serverCertificate.getKeystoreFile(commandLineOptions.getBaseDirectory());
         File serverCertPemFile = serverCertificate.getCertPemFile(commandLineOptions.getBaseDirectory());
         File serverKeyPemFile = serverCertificate.getKeyPemFile(commandLineOptions.getBaseDirectory());
 
-        TestPKICertificate clientCertificate = testPKI.getClientCertificate();
+        TestPKICertificate clientCertificate = testPKI.getOrCreateClientCertificate();
         File clientKeystoreFile = clientCertificate.getKeystoreFile(commandLineOptions.getBaseDirectory());
         File clientCertPemFile = clientCertificate.getCertPemFile(commandLineOptions.getBaseDirectory());
         File clientKeyPemFile = clientCertificate.getKeyPemFile(commandLineOptions.getBaseDirectory());
@@ -123,8 +123,8 @@ public class TestPKI {
      *
      * @return the truststore file as a File object
      */
-    public File getTruststoreFile() {
-        return getTruststoreFile(null);
+    public File getOrCreateTruststoreFile() {
+        return getOrCreateTruststoreFile(null);
     }
 
     /**
@@ -135,7 +135,7 @@ public class TestPKI {
      * @return the truststore file as a File object
      */
     @Synchronized
-    public File getTruststoreFile(File baseDirectory) {
+    public File getOrCreateTruststoreFile(File baseDirectory) {
         if (truststoreFile != null) {
             return truststoreFile;
         }
@@ -145,7 +145,7 @@ public class TestPKI {
 
     /**
      * Retrieve the password for the truststore file accessible via
-     * {@link TestPKI#getTruststoreFile()} or {@link TestPKI#getTruststoreFile(File)}
+     * {@link TestPKI#getOrCreateTruststoreFile()} or {@link TestPKI#getOrCreateTruststoreFile(File)}
      *
      * @return the truststore password as a String
      */
@@ -159,8 +159,8 @@ public class TestPKI {
      *
      * @return the CA PEM file as a File object
      */
-    public File getCaPemFile() {
-        return getCaPemFile(null);
+    public File getOrCreateCaPemFile() {
+        return getOrCreateCaPemFile(null);
     }
 
     /**
@@ -171,7 +171,7 @@ public class TestPKI {
      * @return the CA PEM file as a File object
      */
     @Synchronized
-    public File getCaPemFile(File baseDirectory) {
+    public File getOrCreateCaPemFile(File baseDirectory) {
         if (caPemFile != null) {
             return caPemFile;
         }
@@ -186,12 +186,12 @@ public class TestPKI {
      * @return the default server certificate as a TestPKICertificate
      */
     @SneakyThrows
-    public TestPKICertificate getServerCertificate() {
+    public TestPKICertificate getOrCreateServerCertificate() {
         Set<String> subjectAlternativeNames = new TreeSet<>();
         subjectAlternativeNames.add("localhost");
         subjectAlternativeNames.add(InetAddress.getLocalHost().getHostName());
         subjectAlternativeNames.add(InetAddress.getLocalHost().getCanonicalHostName());
-        return getServerCertificate("server", subjectAlternativeNames);
+        return getOrCreateServerCertificate("server", subjectAlternativeNames);
     }
 
     /**
@@ -201,8 +201,8 @@ public class TestPKI {
      * @param commonName the desired common name
      * @return the server certificate as a TestPKICertificate
      */
-    public TestPKICertificate getServerCertificate(@NonNull String commonName) {
-        return getServerCertificate(commonName, Collections.emptySet());
+    public TestPKICertificate getOrCreateServerCertificate(@NonNull String commonName) {
+        return getOrCreateServerCertificate(commonName, Collections.emptySet());
     }
 
     /**
@@ -214,7 +214,7 @@ public class TestPKI {
      * @param subjectAlternativeNames the desired subject alternative names
      * @return the server certificate as a TestPKICertificate
      */
-    public TestPKICertificate getServerCertificate(@NonNull String commonName, @NonNull Set<String> subjectAlternativeNames) {
+    public TestPKICertificate getOrCreateServerCertificate(@NonNull String commonName, @NonNull Set<String> subjectAlternativeNames) {
         return issuedCertificates.computeIfAbsent(commonName, cn -> new TestPKICertificate(this, commonName, newCertificate(cn, subjectAlternativeNames)));
     }
 
@@ -224,8 +224,8 @@ public class TestPKI {
      *
      * @return the default client certificate as a TestPKICertificate
      */
-    public TestPKICertificate getClientCertificate() {
-        return getClientCertificate("client");
+    public TestPKICertificate getOrCreateClientCertificate() {
+        return getOrCreateClientCertificate("client");
     }
 
     /**
@@ -235,7 +235,7 @@ public class TestPKI {
      * @param commonName the desired common name
      * @return the client certificate as a TestPKICertificate
      */
-    public TestPKICertificate getClientCertificate(@NonNull String commonName) {
+    public TestPKICertificate getOrCreateClientCertificate(@NonNull String commonName) {
         return issuedCertificates.computeIfAbsent(commonName, cn -> new TestPKICertificate(this, commonName, newCertificate(cn, Collections.emptySet())));
     }
 
