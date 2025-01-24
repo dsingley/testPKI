@@ -2,6 +2,7 @@ package com.dsingley.testpki;
 
 import lombok.Getter;
 import lombok.Synchronized;
+import org.checkerframework.checker.nullness.qual.Nullable;
 import okhttp3.tls.HeldCertificate;
 
 import javax.net.ssl.SSLSocketFactory;
@@ -71,7 +72,7 @@ public class TestPKICertificate {
      * @return the keystore file as a File object
      */
     @Synchronized
-    public File getKeystoreFile(File baseDirectory) {
+    public File getKeystoreFile(@Nullable File baseDirectory) {
         if (keystoreFile != null) {
             return keystoreFile;
         }
@@ -96,7 +97,7 @@ public class TestPKICertificate {
      * @return the certificate PEM file as a File object
      */
     @Synchronized
-    public File getCertPemFile(File baseDirectory) {
+    public File getCertPemFile(@Nullable File baseDirectory) {
         if (certPemFile != null) {
             return certPemFile;
         }
@@ -130,7 +131,7 @@ public class TestPKICertificate {
      * @return the key PEM file as a File object
      */
     @Synchronized
-    public File getKeyPemFile(File baseDirectory) {
+    public File getKeyPemFile(@Nullable File baseDirectory) {
         if (keyPemFile != null) {
             return keyPemFile;
         }
