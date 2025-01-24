@@ -4,6 +4,7 @@ import lombok.NonNull;
 import lombok.SneakyThrows;
 import lombok.Synchronized;
 import lombok.extern.slf4j.Slf4j;
+import org.checkerframework.checker.nullness.qual.Nullable;
 import okhttp3.tls.HandshakeCertificates;
 import okhttp3.tls.HeldCertificate;
 
@@ -135,7 +136,7 @@ public class TestPKI {
      * @return the truststore file as a File object
      */
     @Synchronized
-    public File getOrCreateTruststoreFile(File baseDirectory) {
+    public File getOrCreateTruststoreFile(@Nullable File baseDirectory) {
         if (truststoreFile != null) {
             return truststoreFile;
         }
@@ -171,7 +172,7 @@ public class TestPKI {
      * @return the CA PEM file as a File object
      */
     @Synchronized
-    public File getOrCreateCaPemFile(File baseDirectory) {
+    public File getOrCreateCaPemFile(@Nullable File baseDirectory) {
         if (caPemFile != null) {
             return caPemFile;
         }
@@ -284,7 +285,10 @@ public class TestPKI {
     }
 
     @SneakyThrows
-    File createKeystoreFile(File baseDirectory, String prefix, String password, HeldCertificate keyEntryCertificate) {
+    File createKeystoreFile(@Nullable File baseDirectory,
+                            String prefix,
+                            String password,
+                            HeldCertificate keyEntryCertificate) {
         File file = newFile(baseDirectory, prefix, ".pkcs12");
         KeyStore keyStore = KeyStore.getInstance("PKCS12");
         keyStore.load(null, password.toCharArray());
@@ -304,7 +308,11 @@ public class TestPKI {
 
 
     @SneakyThrows
-    static File createPemFile(File baseDirectory, String prefix, String suffix, Collection<HeldCertificate> certificates, Function<HeldCertificate, byte[]> function) {
+    static File createPemFile(@Nullable File baseDirectory,
+                              String prefix,
+                              String suffix,
+                              Collection<HeldCertificate> certificates,
+                              Function<HeldCertificate, byte[]> function) {
         File file = newFile(baseDirectory, prefix, suffix);
         try (FileOutputStream fos = new FileOutputStream(file.getAbsolutePath())) {
             boolean first = true;
@@ -323,7 +331,7 @@ public class TestPKI {
     }
 
     @SneakyThrows
-    private static File newFile(File baseDirectory, String prefix, String suffix) {
+    private static File newFile(@Nullable File baseDirectory, String prefix, String suffix) {
         File file;
         if (baseDirectory != null) {
             if (!Files.isDirectory(baseDirectory.toPath())) {
