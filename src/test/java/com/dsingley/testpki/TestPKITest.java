@@ -1,5 +1,9 @@
 package com.dsingley.testpki;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
+
 import lombok.NonNull;
 import mockwebserver3.MockResponse;
 import mockwebserver3.MockWebServer;
@@ -25,12 +29,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static java.util.concurrent.TimeUnit.SECONDS;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertAll;
-
 class TestPKITest {
-    private final TestPKI testPKI = new TestPKI(KeyType.RSA_2048);
+    private final TestPKI testPKI = new TestPKI(KeyType.RSA_2048, null);
 
     @Nested
     class API {
@@ -61,7 +61,7 @@ class TestPKITest {
         void testCustomServerCertificate() throws Exception {
             TestPKICertificate certificate = testPKI.getOrCreateServerCertificate("custom-server");
 
-            KeyStore keyStore = loadKeyStore(certificate.getKeystoreFile(), certificate.getKeystorePassword());
+            KeyStore keyStore = loadKeyStore(certificate.getOrCreateKeystoreFile(), certificate.getKeystorePassword());
             assertAll(
                     () -> assertThat(Collections.list(keyStore.aliases())).contains("custom-server"),
                     () -> assertThat(keyStore.isKeyEntry("custom-server")).isTrue()
@@ -76,7 +76,7 @@ class TestPKITest {
             Set<String> subjectAlternativeNames = new HashSet<>(Arrays.asList("san-1", "san-2"));
             TestPKICertificate testPKICertificate = testPKI.getOrCreateServerCertificate("san-server", subjectAlternativeNames);
 
-            KeyStore keyStore = loadKeyStore(testPKICertificate.getKeystoreFile(), testPKICertificate.getKeystorePassword());
+            KeyStore keyStore = loadKeyStore(testPKICertificate.getOrCreateKeystoreFile(), testPKICertificate.getKeystorePassword());
             assertAll(
                     () -> assertThat(Collections.list(keyStore.aliases())).contains("san-server"),
                     () -> assertThat(keyStore.isKeyEntry("san-server")).isTrue()
@@ -94,7 +94,7 @@ class TestPKITest {
         void testCustomClientCertificate() throws Exception {
             TestPKICertificate certificate = testPKI.getOrCreateClientCertificate("custom-client");
 
-            KeyStore keyStore = loadKeyStore(certificate.getKeystoreFile(), certificate.getKeystorePassword());
+            KeyStore keyStore = loadKeyStore(certificate.getOrCreateKeystoreFile(), certificate.getKeystorePassword());
             assertAll(
                     () -> assertThat(Collections.list(keyStore.aliases())).contains("custom-client"),
                     () -> assertThat(keyStore.isKeyEntry("custom-client")).isTrue()
@@ -192,7 +192,7 @@ class TestPKITest {
 
             @Test
             void testKeystoreFile() throws Exception {
-                File keystoreFile = testPKI.getOrCreateServerCertificate().getKeystoreFile();
+                File keystoreFile = testPKI.getOrCreateServerCertificate().getOrCreateKeystoreFile();
                 String keystorePassword = testPKI.getOrCreateServerCertificate().getKeystorePassword();
                 assertAll(
                         () -> assertThat(keystoreFile.getAbsolutePath()).matches(".*/server.*\\.pkcs12"),
@@ -215,7 +215,7 @@ class TestPKITest {
 
             @Test
             void testCertPemFile() throws Exception {
-                File certPemFile = testPKI.getOrCreateServerCertificate().getCertPemFile();
+                File certPemFile = testPKI.getOrCreateServerCertificate().getOrCreateCertPemFile();
                 assertAll(
                         () -> assertThat(certPemFile.getAbsolutePath()).matches(".*/server.*\\.cert"),
                         () -> assertThat(certPemFile).exists()
@@ -231,7 +231,7 @@ class TestPKITest {
 
             @Test
             void testKeyPemFile() throws Exception {
-                File keyPemFile = testPKI.getOrCreateServerCertificate().getKeyPemFile();
+                File keyPemFile = testPKI.getOrCreateServerCertificate().getOrCreateKeyPemFile();
                 assertAll(
                         () -> assertThat(keyPemFile.getAbsolutePath()).matches(".*/server.*\\.key"),
                         () -> assertThat(keyPemFile).exists()
@@ -251,7 +251,7 @@ class TestPKITest {
 
             @Test
             void testKeystoreFile() throws Exception {
-                File keystoreFile = testPKI.getOrCreateClientCertificate().getKeystoreFile();
+                File keystoreFile = testPKI.getOrCreateClientCertificate().getOrCreateKeystoreFile();
                 String keystorePassword = testPKI.getOrCreateClientCertificate().getKeystorePassword();
                 assertAll(
                         () -> assertThat(keystoreFile.getAbsolutePath()).matches(".*/client.*\\.pkcs12"),
@@ -271,7 +271,7 @@ class TestPKITest {
 
             @Test
             void testCertPemFile() throws Exception {
-                File certPemFile = testPKI.getOrCreateClientCertificate().getCertPemFile();
+                File certPemFile = testPKI.getOrCreateClientCertificate().getOrCreateCertPemFile();
                 assertAll(
                         () -> assertThat(certPemFile.getAbsolutePath()).matches(".*/client.*\\.cert"),
                         () -> assertThat(certPemFile).exists()
@@ -287,7 +287,7 @@ class TestPKITest {
 
             @Test
             void testKeyPemFile() throws Exception {
-                File keyPemFile = testPKI.getOrCreateClientCertificate().getKeyPemFile();
+                File keyPemFile = testPKI.getOrCreateClientCertificate().getOrCreateKeyPemFile();
                 assertAll(
                         () -> assertThat(keyPemFile.getAbsolutePath()).matches(".*/client.*\\.key"),
                         () -> assertThat(keyPemFile).exists()

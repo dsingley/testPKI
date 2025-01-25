@@ -2,21 +2,20 @@ package com.dsingley.testpki;
 
 import lombok.Getter;
 import lombok.Synchronized;
-import org.checkerframework.checker.nullness.qual.Nullable;
 import okhttp3.tls.HeldCertificate;
 
-import javax.net.ssl.SSLSocketFactory;
-import javax.net.ssl.X509TrustManager;
 import java.io.File;
 import java.security.SecureRandom;
 import java.util.Base64;
 import java.util.Collections;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.X509TrustManager;
 
 /**
  * A TestPKICertificate represents a certificated issued by a {@link TestPKI} instance.
  * <p>
- * It can create persistent or temporary PKCS12 keystore and/or PEM files containing
- * the issued certificate and access to the password for the PKCS12 keystore.
+ * It can create PKCS12 keystore and/or PEM files containing the issued certificate
+ * and access to the password for the PKCS12 keystore.
  * <p>
  * It can provide {@link SSLSocketFactory} and {@link X509TrustManager} instances to use
  * for TLS communication.
@@ -56,52 +55,31 @@ public class TestPKICertificate {
 
     /**
      * Get a reference to a keystore file containing the certificate, creating
-     * a temporary file on disk if not already created.
+     * the file on disk if not already created.
      *
-     * @return the keystore file as a File object
-     */
-    public File getKeystoreFile() {
-        return getKeystoreFile(null);
-    }
-
-    /**
-     * Get a reference to a keystore file containing the certificate, creating
-     * the file on disk in the specified directory if not already created.
-     *
-     * @param baseDirectory the directory in which to create the file, will create a temporary file if null
      * @return the keystore file as a File object
      */
     @Synchronized
-    public File getKeystoreFile(@Nullable File baseDirectory) {
+    public File getOrCreateKeystoreFile() {
         if (keystoreFile != null) {
             return keystoreFile;
         }
-        keystoreFile = testPKI.createKeystoreFile(baseDirectory, commonName, getKeystorePassword(), certificate);
+        keystoreFile = testPKI.createKeystoreFile(commonName, getKeystorePassword(), certificate);
         return keystoreFile;
     }
 
     /**
      * Get a reference to a PEM file containing the public certificate, creating
-     * a temporary file on disk if not already created.
-     *
-     * @return the certificate PEM file as a File object
-     */
-    public File getCertPemFile() {
-        return getCertPemFile(null);
-    }
-
-    /**
-     * Get a reference to a PEM file containing the public certificate, creating
-     * the file on disk in the specified directory if not already created.
+     * the file on disk if not already created.
      *
      * @return the certificate PEM file as a File object
      */
     @Synchronized
-    public File getCertPemFile(@Nullable File baseDirectory) {
+    public File getOrCreateCertPemFile() {
         if (certPemFile != null) {
             return certPemFile;
         }
-        certPemFile = TestPKI.createPemFile(baseDirectory, commonName, ".cert", Collections.singleton(certificate), c -> c.certificatePem().getBytes());
+        certPemFile = testPKI.createPemFile(commonName, ".cert", Collections.singleton(certificate), c -> c.certificatePem().getBytes());
         return certPemFile;
     }
 
@@ -116,26 +94,16 @@ public class TestPKICertificate {
 
     /**
      * Get a reference to a PEM file containing the unencrypted private key, creating
-     * a temporary file on disk if not already created.
-     *
-     * @return the key PEM file as a File object
-     */
-    public File getKeyPemFile() {
-        return getKeyPemFile(null);
-    }
-
-    /**
-     * Get a reference to a PEM file containing the unencrypted private key, creating
-     * the file on disk in the specified directory if not already created.
+     * the file on disk if not already created.
      *
      * @return the key PEM file as a File object
      */
     @Synchronized
-    public File getKeyPemFile(@Nullable File baseDirectory) {
+    public File getOrCreateKeyPemFile() {
         if (keyPemFile != null) {
             return keyPemFile;
         }
-        keyPemFile = TestPKI.createPemFile(baseDirectory, commonName, ".key", Collections.singleton(certificate), c -> c.privateKeyPkcs8Pem().getBytes());
+        keyPemFile = testPKI.createPemFile(commonName, ".key", Collections.singleton(certificate), c -> c.privateKeyPkcs8Pem().getBytes());
         return keyPemFile;
     }
 
