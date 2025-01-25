@@ -9,7 +9,7 @@ class TestPKICertificateTest {
 
     @Test
     void test() {
-        TestPKI testPKI = new TestPKI(KeyType.ECDSA_256);
+        TestPKI testPKI = new TestPKI(KeyType.ECDSA_256, null);
         TestPKICertificate certificate = testPKI.getOrCreateServerCertificate();
         assertAll(
                 () -> assertThat(certificate.getSubjectDN()).startsWith("CN=server"),

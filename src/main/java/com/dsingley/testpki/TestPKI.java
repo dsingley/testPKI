@@ -4,13 +4,10 @@ import lombok.NonNull;
 import lombok.SneakyThrows;
 import lombok.Synchronized;
 import lombok.extern.slf4j.Slf4j;
-import org.checkerframework.checker.nullness.qual.Nullable;
 import okhttp3.tls.HandshakeCertificates;
 import okhttp3.tls.HeldCertificate;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
-import javax.naming.ldap.LdapName;
-import javax.net.ssl.SSLSocketFactory;
-import javax.net.ssl.X509TrustManager;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.net.InetAddress;
@@ -27,6 +24,9 @@ import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
+import javax.naming.ldap.LdapName;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.X509TrustManager;
 
 /**
  * The TestPKI class initializes a test Public Key Infrastructure (PKI) environment
@@ -46,6 +46,7 @@ public class TestPKI {
     private static final String TRUSTSTORE_PASSWORD = "changeit";
 
     private final KeyType keyType;
+    private final File baseDirectory;
     private final AtomicInteger serialNumber;
     private final Map<String, HeldCertificate> caCertificates;
     private final HeldCertificate rootCertificate;
@@ -56,20 +57,20 @@ public class TestPKI {
 
     public static void main(String[] args) {
         CommandLineOptions commandLineOptions = CommandLineOptions.parse(args);
-        TestPKI testPKI = new TestPKI(commandLineOptions.getKeyType());
+        TestPKI testPKI = new TestPKI(commandLineOptions.getKeyType(), commandLineOptions.getBaseDirectory());
 
-        File truststoreFile = testPKI.getOrCreateTruststoreFile(commandLineOptions.getBaseDirectory());
-        File caPemFile = testPKI.getOrCreateCaPemFile(commandLineOptions.getBaseDirectory());
+        File truststoreFile = testPKI.getOrCreateTruststoreFile();
+        File caPemFile = testPKI.getOrCreateCaPemFile();
 
         TestPKICertificate serverCertificate = testPKI.getOrCreateServerCertificate();
-        File serverKeystoreFile = serverCertificate.getKeystoreFile(commandLineOptions.getBaseDirectory());
-        File serverCertPemFile = serverCertificate.getCertPemFile(commandLineOptions.getBaseDirectory());
-        File serverKeyPemFile = serverCertificate.getKeyPemFile(commandLineOptions.getBaseDirectory());
+        File serverKeystoreFile = serverCertificate.getOrCreateKeystoreFile();
+        File serverCertPemFile = serverCertificate.getOrCreateCertPemFile();
+        File serverKeyPemFile = serverCertificate.getOrCreateKeyPemFile();
 
         TestPKICertificate clientCertificate = testPKI.getOrCreateClientCertificate();
-        File clientKeystoreFile = clientCertificate.getKeystoreFile(commandLineOptions.getBaseDirectory());
-        File clientCertPemFile = clientCertificate.getCertPemFile(commandLineOptions.getBaseDirectory());
-        File clientKeyPemFile = clientCertificate.getKeyPemFile(commandLineOptions.getBaseDirectory());
+        File clientKeystoreFile = clientCertificate.getOrCreateKeystoreFile();
+        File clientCertPemFile = clientCertificate.getOrCreateCertPemFile();
+        File clientKeyPemFile = clientCertificate.getOrCreateKeyPemFile();
 
         if (commandLineOptions.isExport()) {
             String prefix = commandLineOptions.getVariableNamePrefix();
@@ -92,9 +93,20 @@ public class TestPKI {
         }
     }
 
+    /**
+     * Constructs a TestPKI instance that will use the specified key algorithm and size, and create files in
+     * the specified base directory. If a base directory is not provided, temporary files will be created.
+     *
+     * @param keyType       the desired key algorithm and size
+     * @param baseDirectory the directory in which to create files (optional)
+     */
     @SneakyThrows
-    public TestPKI(@NonNull KeyType keyType) {
+    public TestPKI(@NonNull KeyType keyType, @Nullable File baseDirectory) {
         this.keyType = keyType;
+        if (baseDirectory != null && !Files.isDirectory(baseDirectory.toPath())) {
+            throw new IllegalArgumentException("baseDirectory, if specified, must be an existing directory: " + baseDirectory);
+        }
+        this.baseDirectory = baseDirectory;
         serialNumber = new AtomicInteger(1);
         caCertificates = new LinkedHashMap<>();
 
@@ -120,33 +132,22 @@ public class TestPKI {
 
     /**
      * Get a reference to a keystore file containing CA certificates, creating
-     * a temporary file on disk if not already created.
+     * the file on disk if not already created.
      *
-     * @return the truststore file as a File object
-     */
-    public File getOrCreateTruststoreFile() {
-        return getOrCreateTruststoreFile(null);
-    }
-
-    /**
-     * Get a reference to a keystore file containing CA certificates, creating
-     * the file on disk in the specified directory if not already created.
-     *
-     * @param baseDirectory the directory in which to create the file, will create a temporary file if null
      * @return the truststore file as a File object
      */
     @Synchronized
-    public File getOrCreateTruststoreFile(@Nullable File baseDirectory) {
+    public File getOrCreateTruststoreFile() {
         if (truststoreFile != null) {
             return truststoreFile;
         }
-        truststoreFile = createKeystoreFile(baseDirectory, "truststore", TRUSTSTORE_PASSWORD, null);
+        truststoreFile = createKeystoreFile("truststore", TRUSTSTORE_PASSWORD, null);
         return truststoreFile;
     }
 
     /**
      * Retrieve the password for the truststore file accessible via
-     * {@link TestPKI#getOrCreateTruststoreFile()} or {@link TestPKI#getOrCreateTruststoreFile(File)}
+     * {@link TestPKI#getOrCreateTruststoreFile()}.
      *
      * @return the truststore password as a String
      */
@@ -156,27 +157,16 @@ public class TestPKI {
 
     /**
      * Get a reference to a PEM file containing CA certificates, creating
-     * a temporary file on disk if not already created.
+     * the file on disk if not already created.
      *
-     * @return the CA PEM file as a File object
-     */
-    public File getOrCreateCaPemFile() {
-        return getOrCreateCaPemFile(null);
-    }
-
-    /**
-     * Get a reference to a PEM file containing CA certificates, creating
-     * the file on disk in the specified directory if not already created.
-     *
-     * @param baseDirectory the directory in which to create the file, will create a temporary file if null
      * @return the CA PEM file as a File object
      */
     @Synchronized
-    public File getOrCreateCaPemFile(@Nullable File baseDirectory) {
+    public File getOrCreateCaPemFile() {
         if (caPemFile != null) {
             return caPemFile;
         }
-        caPemFile = createPemFile(baseDirectory, "ca", ".pem", caCertificates.values(), c -> c.certificatePem().getBytes());
+        caPemFile = createPemFile("ca", ".pem", caCertificates.values(), c -> c.certificatePem().getBytes());
         return caPemFile;
     }
 
@@ -285,11 +275,12 @@ public class TestPKI {
     }
 
     @SneakyThrows
-    File createKeystoreFile(@Nullable File baseDirectory,
-                            String prefix,
-                            String password,
-                            HeldCertificate keyEntryCertificate) {
-        File file = newFile(baseDirectory, prefix, ".pkcs12");
+    File createKeystoreFile(
+            String prefix,
+            String password,
+            HeldCertificate keyEntryCertificate
+    ) {
+        File file = newFile(prefix, ".pkcs12");
         KeyStore keyStore = KeyStore.getInstance("PKCS12");
         keyStore.load(null, password.toCharArray());
         if (keyEntryCertificate != null) {
@@ -308,12 +299,13 @@ public class TestPKI {
 
 
     @SneakyThrows
-    static File createPemFile(@Nullable File baseDirectory,
-                              String prefix,
-                              String suffix,
-                              Collection<HeldCertificate> certificates,
-                              Function<HeldCertificate, byte[]> function) {
-        File file = newFile(baseDirectory, prefix, suffix);
+    File createPemFile(
+            String prefix,
+            String suffix,
+            Collection<HeldCertificate> certificates,
+            Function<HeldCertificate, byte[]> function
+    ) {
+        File file = newFile(prefix, suffix);
         try (FileOutputStream fos = new FileOutputStream(file.getAbsolutePath())) {
             boolean first = true;
             for (HeldCertificate certificate : certificates) {
@@ -331,12 +323,9 @@ public class TestPKI {
     }
 
     @SneakyThrows
-    private static File newFile(@Nullable File baseDirectory, String prefix, String suffix) {
+    private File newFile(String prefix, String suffix) {
         File file;
         if (baseDirectory != null) {
-            if (!Files.isDirectory(baseDirectory.toPath())) {
-                throw new IllegalArgumentException("baseDirectory must be an existing directory: " + baseDirectory);
-            }
             file = new File(baseDirectory, prefix + suffix);
         } else {
             file = File.createTempFile(prefix + "-", suffix);
