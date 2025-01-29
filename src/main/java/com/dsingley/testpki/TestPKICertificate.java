@@ -1,15 +1,18 @@
 package com.dsingley.testpki;
 
 import lombok.Getter;
+import lombok.SneakyThrows;
 import lombok.Synchronized;
 import okhttp3.tls.HeldCertificate;
 
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.X509TrustManager;
 import java.io.File;
+import java.security.KeyPair;
+import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.util.Base64;
 import java.util.Collections;
-import javax.net.ssl.SSLSocketFactory;
-import javax.net.ssl.X509TrustManager;
 
 /**
  * A TestPKICertificate represents a certificated issued by a {@link TestPKI} instance.
@@ -24,6 +27,8 @@ public class TestPKICertificate {
     private final TestPKI testPKI;
     private final String commonName;
     private final HeldCertificate certificate;
+    @Getter(lazy = true) private final String certificateFingerprintSHA256 = computeFingerprint(() -> certificate.certificate().getEncoded(), "SHA-256");
+    @Getter(lazy = true) private final String publicKeyFingerprintSHA256 = computeFingerprint(() -> certificate.keyPair().getPublic().getEncoded(), "SHA-256");
     @Getter(lazy = true) private final String keystorePassword = randomPassword();
     private File keystoreFile;
     private File certPemFile;
@@ -51,6 +56,15 @@ public class TestPKICertificate {
      */
     public long getSerialNumber() {
         return certificate.certificate().getSerialNumber().longValueExact();
+    }
+
+    /**
+     * Get the key pair associated with the certificate.
+     *
+     * @return the private and public keys of the certificate as a KeyPair object
+     */
+    public KeyPair getKeyPair() {
+        return certificate.keyPair();
     }
 
     /**
@@ -136,9 +150,26 @@ public class TestPKICertificate {
         return testPKI.getTrustManager(certificate);
     }
 
+    @SneakyThrows
+    private static String computeFingerprint(ThrowingSupplier<byte[]> encodedValueSupplier, String algorithm) {
+        byte[] encoded = encodedValueSupplier.get();
+        MessageDigest digest = MessageDigest.getInstance(algorithm);
+        byte[] hashed = digest.digest(encoded);
+        StringBuilder sb = new StringBuilder();
+        for (byte b : hashed) {
+            sb.append(String.format("%02X", b));
+        }
+        return sb.toString().toLowerCase();
+    }
+
     private static String randomPassword() {
         byte[] bytes = new byte[20];
         new SecureRandom().nextBytes(bytes);
         return Base64.getEncoder().encodeToString(bytes);
+    }
+
+    @FunctionalInterface
+    private interface ThrowingSupplier<T> {
+        T get() throws Exception;
     }
 }

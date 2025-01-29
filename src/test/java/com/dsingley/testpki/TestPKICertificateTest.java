@@ -14,6 +14,8 @@ class TestPKICertificateTest {
         assertAll(
                 () -> assertThat(certificate.getSubjectDN()).startsWith("CN=server"),
                 () -> assertThat(certificate.getSerialNumber()).isGreaterThan(1),
+                () -> assertThat(certificate.getCertificateFingerprintSHA256()).matches("[0-9a-f]{64}"),
+                () -> assertThat(certificate.getPublicKeyFingerprintSHA256()).matches("[0-9a-f]{64}"),
                 () -> assertThat(certificate.getCertPem()).startsWith("-----BEGIN CERTIFICATE-----"),
                 () -> assertThat(certificate.getKeyPem()).startsWith("-----BEGIN PRIVATE KEY-----")
         );
