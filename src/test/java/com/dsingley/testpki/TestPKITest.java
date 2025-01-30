@@ -2,6 +2,8 @@ package com.dsingley.testpki;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
 import lombok.NonNull;
@@ -27,10 +29,33 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 class TestPKITest {
     private final TestPKI testPKI = new TestPKI(KeyType.RSA_2048, null);
+
+    @Nested
+    class Configuration {
+
+        @Test
+        void shouldNot_throwException_when_validBaseDirectory() {
+            File tempDir = new File(System.getProperty("java.io.tmpdir"));
+
+            assertThatNoException().isThrownBy(() ->
+                    new TestPKI(KeyType.ECDSA_256, tempDir)
+            );
+        }
+
+        @Test
+        void should_throwException_when_invalidBaseDirectory() {
+            File invalidDir = new File("/" + UUID.randomUUID());
+
+            assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() ->
+                    new TestPKI(KeyType.ECDSA_256, invalidDir)
+            ).withMessageContaining("must be an existing directory");
+        }
+    }
 
     @Nested
     class API {
