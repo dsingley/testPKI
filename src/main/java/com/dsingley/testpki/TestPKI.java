@@ -22,7 +22,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 import javax.naming.ldap.LdapName;
 import javax.net.ssl.SSLSocketFactory;
@@ -47,7 +47,7 @@ public class TestPKI {
 
     private final KeyType keyType;
     private final File baseDirectory;
-    private final AtomicInteger serialNumber;
+    private final AtomicLong serialNumber;
     private final Map<String, HeldCertificate> caCertificates;
     private final HeldCertificate rootCertificate;
     private final HeldCertificate intermediateCertificate;
@@ -107,7 +107,7 @@ public class TestPKI {
             throw new IllegalArgumentException("baseDirectory, if specified, must be an existing directory: " + baseDirectory);
         }
         this.baseDirectory = baseDirectory;
-        serialNumber = new AtomicInteger(1);
+        serialNumber = new AtomicLong(1);
         caCertificates = new LinkedHashMap<>();
 
         rootCertificate = newCertificate(new HeldCertificate.Builder()
@@ -228,6 +228,22 @@ public class TestPKI {
      */
     public TestPKICertificate getOrCreateClientCertificate(@NonNull String commonName) {
         return issuedCertificates.computeIfAbsent(commonName, cn -> new TestPKICertificate(this, commonName, newCertificate(cn, Collections.emptySet())));
+    }
+
+    public TestPKICertificate getCertificateBySerialNumber(long serialNumber) {
+        if (serialNumber > 0) {
+            for (HeldCertificate certificate : caCertificates.values()) {
+                if (certificate.certificate().getSerialNumber().longValueExact() == serialNumber) {
+                    return new TestPKICertificate(this, getCn(certificate.certificate()), certificate);
+                }
+            }
+            for (TestPKICertificate certificate : issuedCertificates.values()) {
+                if (certificate.getSerialNumber() == serialNumber) {
+                    return certificate;
+                }
+            }
+        }
+        return null;
     }
 
     SSLSocketFactory getSSLSocketFactory(HeldCertificate certificate) {

@@ -41,6 +41,15 @@ public class TestPKICertificate {
     }
 
     /**
+     * Get the distinguished name (DN) of the issuer of the certificate.
+     *
+     * @return the issuer DN as a string
+     */
+    public String getIssuerDN() {
+        return certificate.certificate().getIssuerDN().getName();
+    }
+
+    /**
      * Get the distinguished name (DN) of the subject of the certificate.
      *
      * @return the subject DN as a string

@@ -12,8 +12,9 @@ class TestPKICertificateTest {
         TestPKI testPKI = new TestPKI(KeyType.ECDSA_256, null);
         TestPKICertificate certificate = testPKI.getOrCreateServerCertificate();
         assertAll(
+                () -> assertThat(certificate.getIssuerDN()).startsWith("CN=Intermediate CA"),
                 () -> assertThat(certificate.getSubjectDN()).startsWith("CN=server"),
-                () -> assertThat(certificate.getSerialNumber()).isGreaterThan(1),
+                () -> assertThat(certificate.getSerialNumber()).isGreaterThan(2),
                 () -> assertThat(certificate.getCertificateFingerprintSHA256()).matches("[0-9a-f]{64}"),
                 () -> assertThat(certificate.getPublicKeyFingerprintSHA256()).matches("[0-9a-f]{64}"),
                 () -> assertThat(certificate.getCertPem()).startsWith("-----BEGIN CERTIFICATE-----"),

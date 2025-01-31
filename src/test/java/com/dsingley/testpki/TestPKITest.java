@@ -130,6 +130,18 @@ class TestPKITest {
         }
 
         @Test
+        void testGetCertificateBySerialNumber() {
+            TestPKICertificate certificate = testPKI.getOrCreateClientCertificate();
+            long serialNumber = certificate.getSerialNumber();
+
+            assertAll(
+                    () -> assertThat(testPKI.getCertificateBySerialNumber(0)).isNull(),
+                    () -> assertThat(testPKI.getCertificateBySerialNumber(serialNumber).getSerialNumber()).isEqualTo(serialNumber),
+                    () -> assertThat(testPKI.getCertificateBySerialNumber(serialNumber + 1)).isNull()
+            );
+        }
+
+        @Test
         void testSSLSocketFactoriesAndTrustManager() throws Exception{
             try (MockWebServer mockWebServer = new MockWebServer()) {
                 mockWebServer.useHttps(testPKI.getOrCreateServerCertificate().getSSLSocketFactory());
