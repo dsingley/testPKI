@@ -81,7 +81,7 @@ public class TestPKI {
             }
             System.out.printf("export %sTRUSTSTORE_PATH=%s%n", prefix, truststoreFile.getAbsolutePath());
             System.out.printf("export %sTRUSTSTORE_PASSWORD='%s'%n", prefix, testPKI.getTruststorePassword());
-            System.out.printf("export %sCA_PATH='%s'%n", prefix, caPemFile.getAbsolutePath());
+            System.out.printf("export %sCA_PATH=%s%n", prefix, caPemFile.getAbsolutePath());
             System.out.printf("export %sSERVER_KEYSTORE_PATH=%s%n", prefix, serverKeystoreFile.getAbsolutePath());
             System.out.printf("export %sSERVER_KEYSTORE_PASSWORD='%s'%n", prefix, serverCertificate.getKeystorePassword());
             System.out.printf("export %sSERVER_CERT_PATH=%s%n", prefix, serverCertPemFile.getAbsolutePath());

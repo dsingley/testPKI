@@ -153,8 +153,9 @@ class TestPKITest {
                         .build()
                 );
 
+                TestPKICertificate clientCertificate = testPKI.getOrCreateClientCertificate();
                 OkHttpClient client = new OkHttpClient.Builder()
-                        .sslSocketFactory(testPKI.getOrCreateClientCertificate().getSSLSocketFactory(), testPKI.getOrCreateClientCertificate().getTrustManager())
+                        .sslSocketFactory(clientCertificate.getSSLSocketFactory(), clientCertificate.getTrustManager())
                         .dns(new IPv4OnlyDns())
                         .build();
 
