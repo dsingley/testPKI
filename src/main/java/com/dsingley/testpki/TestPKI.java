@@ -38,7 +38,7 @@ import javax.net.ssl.X509TrustManager;
  * It can provide {@link SSLSocketFactory} and {@link X509TrustManager} instances to use
  * for TLS communication.
  *
- * @see <a href="https://github.com/square/okhttp/tree/master/okhttp-tls">https://github.com/square/okhttp/tree/master/okhttp-tls</a>
+ * @see <a href="https://github.com/square/okhttp/tree/master/okhttp-tls">OkHttp TLS</a>
  */
 @Slf4j
 public class TestPKI {
