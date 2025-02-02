@@ -10,7 +10,7 @@ to provide server and client certificates.
 
 ```java
 @Test
-void exampleTest() throws Exception{
+void exampleTest() throws Exception {
     TestPKI testPKI = new TestPKI(KeyType.RSA_2048, null);
     
     try (MockWebServer mockWebServer = new MockWebServer()) {
