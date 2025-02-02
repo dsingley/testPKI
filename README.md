@@ -56,7 +56,7 @@ Usage:
 java TestPKI <base directory> [--export [variable name prefix]] [--keyType ECDSA_256|RSA_2048]
 ```
 
-For example, the following invocation will create 8 files in the `/tmp` directory and output 11
+For example, the following invocation will create eight files in the `/tmp` directory and output 11
 environment variables describing the created artifacts and required passwords.
 
 ```bash
