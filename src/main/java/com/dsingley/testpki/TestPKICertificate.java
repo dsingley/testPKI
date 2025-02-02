@@ -15,7 +15,7 @@ import java.util.Base64;
 import java.util.Collections;
 
 /**
- * A TestPKICertificate represents a certificated issued by a {@link TestPKI} instance.
+ * A TestPKICertificate represents a certificate issued by a {@link TestPKI} instance.
  * <p>
  * It can create PKCS12 keystore and/or PEM files containing the issued certificate
  * and access to the password for the PKCS12 keystore.
@@ -41,7 +41,7 @@ public class TestPKICertificate {
     }
 
     /**
-     * Get the distinguished name (DN) of the issuer of the certificate.
+     * Get the distinguished name (DN) of the certificate issuer.
      *
      * @return the issuer DN as a string
      */
@@ -50,7 +50,7 @@ public class TestPKICertificate {
     }
 
     /**
-     * Get the distinguished name (DN) of the subject of the certificate.
+     * Get the distinguished name (DN) of the certificate subject.
      *
      * @return the subject DN as a string
      */
@@ -61,7 +61,7 @@ public class TestPKICertificate {
     /**
      * Get the serial number of the certificate.
      *
-     * @return the serial number of the certificate as a long
+     * @return the serial number of the certificate as a {@code long}
      */
     public long getSerialNumber() {
         return certificate.certificate().getSerialNumber().longValueExact();

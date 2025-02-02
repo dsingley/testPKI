@@ -5,7 +5,7 @@ updates:
     schedule:
       interval: "weekly"
     ignore:
-      # JUnit Pioneer 2.x requires Java 11, so just ignore it (the 1.x branch is not being updated anymore)
+      # JUnit Pioneer 2.x requires Java 11, so ignore it (the 1.x branch is not being updated anymore)
       - dependency-name: "org.junit-pioneer:junit-pioneer"
     groups:
       dev-deps:
