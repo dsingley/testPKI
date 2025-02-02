@@ -46,7 +46,7 @@ public class TestPKICertificate {
      * @return the issuer DN as a string
      */
     public String getIssuerDN() {
-        return certificate.certificate().getIssuerDN().getName();
+        return certificate.certificate().getIssuerX500Principal().getName();
     }
 
     /**
@@ -55,7 +55,7 @@ public class TestPKICertificate {
      * @return the subject DN as a string
      */
     public String getSubjectDN() {
-        return certificate.certificate().getSubjectDN().getName();
+        return certificate.certificate().getSubjectX500Principal().getName();
     }
 
     /**
