@@ -41,7 +41,7 @@ public class TestPKICertificate {
     }
 
     /**
-     * Get the distinguished name (DN) of the certificate issuer
+     * Get the distinguished name (DN) of the certificate issuer.
      *
      * @return the issuer DN as a string
      */
