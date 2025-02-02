@@ -142,7 +142,7 @@ class TestPKITest {
         }
 
         @Test
-        void testSSLSocketFactoriesAndTrustManager() throws Exception{
+        void testSSLSocketFactoriesAndTrustManager() throws Exception {
             try (MockWebServer mockWebServer = new MockWebServer()) {
                 mockWebServer.useHttps(testPKI.getOrCreateServerCertificate().getSSLSocketFactory());
                 mockWebServer.requestClientAuth();
