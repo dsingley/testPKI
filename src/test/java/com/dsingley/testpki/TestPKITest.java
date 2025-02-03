@@ -11,6 +11,7 @@ import mockwebserver3.MockResponse;
 import mockwebserver3.MockWebServer;
 import mockwebserver3.RecordedRequest;
 import okhttp3.Dns;
+import okhttp3.Handshake;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -23,6 +24,7 @@ import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.security.KeyStore;
+import java.security.Principal;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.Collections;
@@ -169,9 +171,16 @@ class TestPKITest {
 
                     assertAll(
                             () -> assertThat(response.code()).isEqualTo(200),
-                            () -> assertThat(response.body().string()).isEqualTo("Hello, Test"),
-                            () -> assertThat(recordedRequest.getHandshake().peerPrincipal().toString()).startsWith("CN=client")
+                            () -> assertThat(response.body().string()).isEqualTo("Hello, Test")
                     );
+
+                    Handshake handshake = recordedRequest.getHandshake();
+                    assertThat(handshake).isNotNull();
+
+                    Principal peerPrincipal = handshake.peerPrincipal();
+                    assertThat(peerPrincipal).isNotNull();
+
+                    assertThat(peerPrincipal.toString()).startsWith("CN=client");
                 }
             }
         }
