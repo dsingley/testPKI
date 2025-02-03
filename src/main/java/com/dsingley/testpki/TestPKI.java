@@ -274,7 +274,7 @@ public class TestPKI {
                 throw new RuntimeException("unexpected KeyType: " + keyType.name());
         }
         HeldCertificate certificate = builder.build();
-        log.info("issued certificate {}: {}", certificate.certificate().getSerialNumber(), certificate.certificate().getSubjectDN());
+        log.info("issued certificate {}: {}", certificate.certificate().getSerialNumber(), certificate.certificate().getSubjectX500Principal());
         return certificate;
     }
 
@@ -330,7 +330,7 @@ public class TestPKI {
                 } else {
                     fos.write("\n".getBytes());
                 }
-                fos.write(String.format("# %s%n", certificate.certificate().getSubjectDN().getName()).getBytes());
+                fos.write(String.format("# %s%n", certificate.certificate().getSubjectX500Principal().getName()).getBytes());
                 fos.write(function.apply(certificate));
             }
         }
@@ -352,7 +352,7 @@ public class TestPKI {
 
     @SneakyThrows
     private static String getCn(X509Certificate certificate) {
-        return new LdapName(certificate.getSubjectDN().getName()).getRdns().stream()
+        return new LdapName(certificate.getSubjectX500Principal().getName()).getRdns().stream()
                 .filter(rdn -> rdn.getType().equalsIgnoreCase("CN"))
                 .findFirst()
                 .orElseThrow(() -> new RuntimeException("no CN found"))

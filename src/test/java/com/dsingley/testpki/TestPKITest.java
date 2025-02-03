@@ -93,7 +93,7 @@ class TestPKITest {
             );
 
             X509Certificate serverCertificate = getCertificate(keyStore, "custom-server");
-            assertThat(serverCertificate.getSubjectDN().getName()).startsWith("CN=custom-server");
+            assertThat(serverCertificate.getSubjectX500Principal().getName()).startsWith("CN=custom-server");
         }
 
         @Test
@@ -109,7 +109,7 @@ class TestPKITest {
 
             X509Certificate serverCertificate = getCertificate(keyStore, "san-server");
             assertAll(
-                    () -> assertThat(serverCertificate.getSubjectDN().getName()).startsWith("CN=san-server"),
+                    () -> assertThat(serverCertificate.getSubjectX500Principal().getName()).startsWith("CN=san-server"),
                     () -> assertThat(getSubjectAlternativeNames(serverCertificate)).contains("san-1"),
                     () -> assertThat(getSubjectAlternativeNames(serverCertificate)).contains("san-2")
             );
@@ -126,7 +126,7 @@ class TestPKITest {
             );
 
             X509Certificate serverCertificate = getCertificate(keyStore, "custom-client");
-            assertThat(serverCertificate.getSubjectDN().getName()).startsWith("CN=custom-client");
+            assertThat(serverCertificate.getSubjectX500Principal().getName()).startsWith("CN=custom-client");
         }
 
         @Test
@@ -201,10 +201,10 @@ class TestPKITest {
                 );
 
                 X509Certificate rootCertificate = getCertificate(keyStore, "root");
-                assertThat(rootCertificate.getSubjectDN().getName()).startsWith("CN=Root CA");
+                assertThat(rootCertificate.getSubjectX500Principal().getName()).startsWith("CN=Root CA");
 
                 X509Certificate intermediateCertificate = getCertificate(keyStore, "intermediate");
-                assertThat(intermediateCertificate.getSubjectDN().getName()).startsWith("CN=Intermediate CA");
+                assertThat(intermediateCertificate.getSubjectX500Principal().getName()).startsWith("CN=Intermediate CA");
             }
 
             @Test
@@ -246,7 +246,7 @@ class TestPKITest {
 
                 X509Certificate serverCertificate = getCertificate(keyStore, "server");
                 assertAll(
-                        () -> assertThat(serverCertificate.getSubjectDN().getName()).startsWith("CN=server"),
+                        () -> assertThat(serverCertificate.getSubjectX500Principal().getName()).startsWith("CN=server"),
                         () -> assertThat(getSubjectAlternativeNames(serverCertificate)).contains("localhost")
                 );
             }
@@ -304,7 +304,7 @@ class TestPKITest {
                 );
 
                 X509Certificate clientCertificate = getCertificate(keyStore, "client");
-                assertThat(clientCertificate.getSubjectDN().getName()).startsWith("CN=client");
+                assertThat(clientCertificate.getSubjectX500Principal().getName()).startsWith("CN=client");
             }
 
             @Test
@@ -364,7 +364,7 @@ class TestPKITest {
         @Override
         public List<InetAddress> lookup(@NonNull String hostname) throws UnknownHostException {
             return Dns.SYSTEM.lookup(hostname).stream()
-                    .filter(inetAddress -> inetAddress instanceof Inet4Address)
+                    .filter(Inet4Address.class::isInstance)
                     .collect(Collectors.toList());
         }
     }
