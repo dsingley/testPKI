@@ -30,7 +30,7 @@ import javax.net.ssl.X509TrustManager;
 
 /**
  * The TestPKI class initializes a test Public Key Infrastructure (PKI) environment
- * with root and intermediate certificate authorities.
+ * with root and intermediate certificate authorities (CA).
  * <p>
  * It can create persistent or temporary PKCS12 keystore and/or PEM files for
  * trusted certificates, server certificates and keys, and client certificates and keys.
@@ -230,6 +230,13 @@ public class TestPKI {
         return issuedCertificates.computeIfAbsent(commonName, cn -> new TestPKICertificate(this, commonName, newCertificate(cn, Collections.emptySet())));
     }
 
+    /**
+     * Get a reference to a {@link TestPKICertificate} for a <em>previously issued</em> certificate with
+     * the specified serial number, or <code>null</code> if no such certificate has been issued.
+     *
+     * @param serialNumber the serial number of an issued certificate
+     * @return the certificate or <code>null</code>
+     */
     public TestPKICertificate getCertificateBySerialNumber(long serialNumber) {
         if (serialNumber > 0) {
             for (HeldCertificate certificate : caCertificates.values()) {
