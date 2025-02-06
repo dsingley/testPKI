@@ -17,7 +17,7 @@ import java.util.Collections;
 /**
  * A TestPKICertificate represents a certificate issued by a {@link TestPKI} instance.
  * <p>
- * It can create PKCS12 keystore and/or PEM files containing the issued certificate
+ * It can create a PKCS12 keystore and/or PEM files containing the issued certificate
  * and access to the password for the PKCS12 keystore.
  * <p>
  * It can provide {@link SSLSocketFactory} and {@link X509TrustManager} instances to use
