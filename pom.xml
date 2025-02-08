@@ -6,7 +6,7 @@
 
     <groupId>com.dsingley</groupId>
     <artifactId>testpki</artifactId>
-    <version>0.5.0-SNAPSHOT</version>
+    <version>0.5.0</version>
 
     <name>${project.groupId}:${project.artifactId}</name>
     <description>A package for creating test Public Key Infrastructure (PKI) environments.</description>
@@ -31,7 +31,7 @@
     </developers>
 
     <scm>
-        <connection>scm:git:git://github.com:dsingley/testPKI.git</connection>
+        <connection>scm:git:git://github.com/dsingley/testPKI.git</connection>
         <developerConnection>scm:git:ssh://github.com:dsingley/testPKI.git</developerConnection>
         <url>https://github.com/dsingley/testPKI</url>
     </scm>

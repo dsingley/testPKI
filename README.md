@@ -5,8 +5,8 @@ to simplify instantiation of test Public Key Infrastructure (PKI) environments.
 
 ## Integration Testing
 
-testPKI can be used in integration tests along with [MockWebServer](https://github.com/square/okhttp/tree/master/mockwebserver)
-to provide server and client certificates.
+testPKI can be used in integration tests to provide server and client certificates for
+tested components and tools like [MockWebServer](https://github.com/square/okhttp/tree/master/mockwebserver).
 
 ```java
 @Test
@@ -49,7 +49,7 @@ void exampleTest() throws Exception {
 
 ## Command Line
 
-testPKI can be run stand alone create common PKI artifacts.
+testPKI can be run stand alone to create common PKI artifacts.
 
 Usage:
 ```
