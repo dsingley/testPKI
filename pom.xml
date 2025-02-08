@@ -31,12 +31,14 @@
     </developers>
 
     <scm>
-        <connection>scm:git:git://github.com:dsingley/testPKI.git</connection>
+        <connection>scm:git:git://github.com/dsingley/testPKI.git</connection>
         <developerConnection>scm:git:ssh://github.com:dsingley/testPKI.git</developerConnection>
         <url>https://github.com/dsingley/testPKI</url>
     </scm>
 
     <properties>
+        <arguments/>
+
         <checker-qual.version>3.48.4</checker-qual.version>
         <lombok.version>1.18.36</lombok.version>
         <slf4j.version>2.0.16</slf4j.version>
@@ -52,6 +54,7 @@
         <maven-source.version>3.3.1</maven-source.version>
         <maven-javadoc.version>3.11.2</maven-javadoc.version>
         <maven-gpg.version>3.2.7</maven-gpg.version>
+        <maven-release.version>3.1.1</maven-release.version>
         <central-publishing.version>0.7.0</central-publishing.version>
         <maven.compiler.source>8</maven.compiler.source>
         <maven.compiler.target>${maven.compiler.source}</maven.compiler.target>
@@ -157,6 +160,18 @@
                         </goals>
                     </execution>
                 </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-release-plugin</artifactId>
+                <version>${maven-release.version}</version>
+                <configuration>
+                    <mavenExecutorId>forked-path</mavenExecutorId>
+                    <useReleaseProfile>false</useReleaseProfile>
+                    <arguments>${arguments} -Prelease</arguments>
+                    <tagNameFormat>v@{project.version}</tagNameFormat>
+                </configuration>
             </plugin>
         </plugins>
     </build>
