@@ -60,7 +60,7 @@ For example, the following invocation will create eight files in the `/tmp` dire
 environment variables describing the created artifacts and required passwords.
 
 ```bash
-$ java -jar target/testpki-1.0-SNAPSHOT-jar-with-dependencies.jar /tmp --export TESTPKI
+$ java -jar target/testpki-0.5.0-jar-with-dependencies.jar /tmp --export TESTPKI
 ```
 
 ```bash
