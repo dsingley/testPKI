@@ -31,8 +31,8 @@
     </developers>
 
     <scm>
-        <connection>scm:git:git://github.com/dsingley/testPKI.git</connection>
-        <developerConnection>scm:git:ssh://github.com:dsingley/testPKI.git</developerConnection>
+        <connection>scm:git:https://github.com/dsingley/testPKI.git</connection>
+        <developerConnection>scm:git:git@github.com:dsingley/testPKI.git</developerConnection>
         <url>https://github.com/dsingley/testPKI</url>
     </scm>
 
