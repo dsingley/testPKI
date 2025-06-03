@@ -20,8 +20,6 @@ updates:
           - "patch"
     assignees:
       - "dsingley"
-    reviewers:
-      - "dsingley"
     open-pull-requests-limit: 10
   - package-ecosystem: "github-actions"
     directory: "/"
@@ -32,6 +30,4 @@ updates:
         patterns:
           - "*"
     assignees:
-      - "dsingley"
-    reviewers:
       - "dsingley"
