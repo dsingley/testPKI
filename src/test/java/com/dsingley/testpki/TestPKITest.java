@@ -148,6 +148,7 @@ class TestPKITest {
             try (MockWebServer mockWebServer = new MockWebServer()) {
                 mockWebServer.useHttps(testPKI.getOrCreateServerCertificate().getSSLSocketFactory());
                 mockWebServer.requestClientAuth();
+                mockWebServer.start();
 
                 mockWebServer.enqueue(new MockResponse.Builder()
                         .code(200)
