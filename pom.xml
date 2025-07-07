@@ -38,13 +38,13 @@
     <properties>
         <arguments />
 
-        <checker-qual.version>3.49.4</checker-qual.version>
+        <checker-qual.version>3.49.5</checker-qual.version>
         <lombok.version>1.18.38</lombok.version>
         <slf4j.version>2.0.17</slf4j.version>
         <log4j.version>2.25.0</log4j.version>
         <okhttp.version>5.0.0-alpha.14</okhttp.version>
 
-        <junit-jupiter.version>5.13.2</junit-jupiter.version>
+        <junit-jupiter.version>5.13.3</junit-jupiter.version>
         <junit-pioneer.version>1.9.1</junit-pioneer.version>
         <assertj.version>3.27.3</assertj.version>
 
@@ -52,7 +52,7 @@
         <maven-surefire.version>3.5.3</maven-surefire.version>
         <maven-source.version>3.3.1</maven-source.version>
         <maven-javadoc.version>3.11.2</maven-javadoc.version>
-        <maven-gpg.version>3.2.7</maven-gpg.version>
+        <maven-gpg.version>3.2.8</maven-gpg.version>
         <maven-release.version>3.1.1</maven-release.version>
         <central-publishing.version>0.8.0</central-publishing.version>
         <maven.compiler.source>8</maven.compiler.source>
