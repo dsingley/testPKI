@@ -39,7 +39,7 @@
         <arguments />
 
         <checker-qual.version>3.50.0</checker-qual.version>
-        <lombok.version>1.18.38</lombok.version>
+        <lombok.version>1.18.40</lombok.version>
         <slf4j.version>2.0.17</slf4j.version>
         <log4j.version>2.25.1</log4j.version>
         <okhttp.version>5.1.0</okhttp.version>
