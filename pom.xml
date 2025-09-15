@@ -38,7 +38,7 @@
     <properties>
         <arguments />
 
-        <checker-qual.version>3.50.0</checker-qual.version>
+        <checker-qual.version>3.51.0</checker-qual.version>
         <lombok.version>1.18.40</lombok.version>
         <slf4j.version>2.0.17</slf4j.version>
         <log4j.version>2.25.1</log4j.version>
@@ -49,7 +49,7 @@
         <assertj.version>3.27.4</assertj.version>
 
         <maven-assembly.version>3.7.1</maven-assembly.version>
-        <maven-surefire.version>3.5.3</maven-surefire.version>
+        <maven-surefire.version>3.5.4</maven-surefire.version>
         <maven-source.version>3.3.1</maven-source.version>
         <maven-javadoc.version>3.11.3</maven-javadoc.version>
         <maven-gpg.version>3.2.8</maven-gpg.version>
