@@ -46,7 +46,7 @@
 
         <junit-jupiter.version>5.13.4</junit-jupiter.version>
         <junit-pioneer.version>1.9.1</junit-pioneer.version>
-        <assertj.version>3.27.5</assertj.version>
+        <assertj.version>3.27.6</assertj.version>
 
         <maven-assembly.version>3.7.1</maven-assembly.version>
         <maven-surefire.version>3.5.4</maven-surefire.version>
