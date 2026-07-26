@@ -55,6 +55,7 @@ public class TestPKI {
     private File truststoreFile;
     private File caPemFile;
 
+    @SuppressWarnings("java:S106")
     public static void main(String[] args) {
         CommandLineOptions commandLineOptions = CommandLineOptions.parse(args);
         TestPKI testPKI = new TestPKI(commandLineOptions.getKeyType(), commandLineOptions.getBaseDirectory());
@@ -269,6 +270,7 @@ public class TestPKI {
                 .trustManager();
     }
 
+    @SuppressWarnings("java:S112")
     private HeldCertificate newCertificate(HeldCertificate.Builder builder) {
         switch (keyType) {
             case ECDSA_256:

@@ -24,6 +24,7 @@ import java.util.Collections;
  * for TLS communication.
  */
 public class TestPKICertificate {
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
     private final TestPKI testPKI;
     private final String commonName;
     private final HeldCertificate certificate;
@@ -173,11 +174,12 @@ public class TestPKICertificate {
 
     private static String randomPassword() {
         byte[] bytes = new byte[20];
-        new SecureRandom().nextBytes(bytes);
+        SECURE_RANDOM.nextBytes(bytes);
         return Base64.getEncoder().encodeToString(bytes);
     }
 
     @FunctionalInterface
+    @SuppressWarnings("java:S112")
     private interface ThrowingSupplier<T> {
         T get() throws Exception;
     }
