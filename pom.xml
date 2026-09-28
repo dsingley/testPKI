@@ -40,7 +40,7 @@
 
         <checker-qual.version>3.55.1</checker-qual.version>
         <lombok.version>1.18.48</lombok.version>
-        <slf4j.version>2.0.19</slf4j.version>
+        <slf4j.version>2.0.20</slf4j.version>
         <log4j.version>2.26.1</log4j.version>
         <okhttp.version>5.5.0</okhttp.version>
 
