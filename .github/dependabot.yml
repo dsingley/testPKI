@@ -3,7 +3,9 @@ updates:
   - package-ecosystem: "maven"
     directory: "/"
     schedule:
-      interval: "weekly"
+      interval: daily
+      time: "06:00"
+      timezone: America/New_York
     ignore:
       # JUnit Pioneer 2.x requires Java 11, so ignore it (the 1.x branch is not being updated anymore)
       - dependency-name: "org.junit-pioneer:junit-pioneer"
@@ -24,7 +26,9 @@ updates:
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "weekly"
+      interval: daily
+      time: "06:00"
+      timezone: America/New_York
     groups:
       actions-deps:
         patterns:
