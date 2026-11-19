@@ -11,6 +11,7 @@ import java.io.File;
 import java.security.KeyPair;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
+import java.security.cert.X509Certificate;
 import java.util.Base64;
 import java.util.Collections;
 
@@ -66,6 +67,15 @@ public class TestPKICertificate {
      */
     public long getSerialNumber() {
         return certificate.certificate().getSerialNumber().longValueExact();
+    }
+
+    /**
+     * Get the certificate as an X509Certificate.
+     *
+     * @return the certificate as an X509Certificate object
+     */
+    public X509Certificate getX509Certificate() {
+        return certificate.certificate();
     }
 
     /**
