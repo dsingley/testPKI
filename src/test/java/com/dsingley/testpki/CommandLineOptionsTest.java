@@ -26,8 +26,24 @@ class CommandLineOptionsTest {
                 () -> assertThat(options.getBaseDirectory()).isEqualTo(new File("./baseDirectory")),
                 () -> assertThat(options.getKeyType()).isEqualTo(KeyType.ECDSA_256),
                 () -> assertThat(options.isExport()).isFalse(),
-                () -> assertThat(options.getVariableNamePrefix()).isNull()
+                () -> assertThat(options.getVariableNamePrefix()).isNull(),
+                () -> assertThat(options.getOrganizationalUnit()).isNull()
         );
+    }
+
+    @Test
+    void testOrganizationalUnit() {
+        String[] args = {"./baseDirectory", "--organizationalUnit", "My Unit"};
+        CommandLineOptions options = CommandLineOptions.parse(args);
+        assertThat(options.getOrganizationalUnit()).isEqualTo("My Unit");
+    }
+
+    @Test
+    void testMissingOrganizationalUnit() {
+        String[] args = {"./baseDirectory", "--organizationalUnit"};
+        assertThatExceptionOfType(IllegalArgumentException.class)
+                .isThrownBy(() -> CommandLineOptions.parse(args))
+                .withMessageContaining("Usage:");
     }
 
     @Test

@@ -11,9 +11,10 @@ import java.util.stream.Collectors;
 @Builder
 class CommandLineOptions {
     private File baseDirectory;
-    @Builder.Default private KeyType keyType = KeyType.ECDSA_256;
     private boolean export;
     private String variableNamePrefix;
+    @Builder.Default private KeyType keyType = KeyType.ECDSA_256;
+    private String organizationalUnit;
 
     static CommandLineOptions parse(String[] args) {
         if (args.length < 1) {
@@ -38,6 +39,13 @@ class CommandLineOptions {
                         throw new IllegalArgumentException(usage());
                     }
                     break;
+                case "--organizationalUnit":
+                    if (i < args.length) {
+                        builder.organizationalUnit(args[i++]);
+                    } else {
+                        throw new IllegalArgumentException(usage());
+                    }
+                    break;
                 default:
                     throw new IllegalArgumentException(usage());
             }
@@ -50,6 +58,6 @@ class CommandLineOptions {
         String keyTypes = Arrays.stream(KeyType.values())
                 .map(Enum::name)
                 .collect(Collectors.joining("|"));
-        return String.format("Usage: java %s <base directory> [--export [variable name prefix]] [--keyType %s]", TestPKI.class.getName(), keyTypes);
+        return String.format("Usage: java %s <base directory> [--export [variable name prefix]] [--keyType %s] [--organizationalUnit <ou value>]", TestPKI.class.getName(), keyTypes);
     }
 }

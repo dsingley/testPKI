@@ -42,11 +42,12 @@ import javax.net.ssl.X509TrustManager;
  */
 @Slf4j
 public class TestPKI {
-    private static final String ORGANIZATIONAL_UNIT = "TestPKI";
+    private static final String DEFAULT_ORGANIZATIONAL_UNIT = "TestPKI";
     private static final String TRUSTSTORE_PASSWORD = "changeit";
 
     private final KeyType keyType;
     private final File baseDirectory;
+    private final String organizationalUnit;
     private final AtomicLong serialNumber;
     private final Map<String, HeldCertificate> caCertificates;
     private final HeldCertificate rootCertificate;
@@ -58,7 +59,7 @@ public class TestPKI {
     @SuppressWarnings("java:S106")
     public static void main(String[] args) {
         CommandLineOptions commandLineOptions = CommandLineOptions.parse(args);
-        TestPKI testPKI = new TestPKI(commandLineOptions.getKeyType(), commandLineOptions.getBaseDirectory());
+        TestPKI testPKI = new TestPKI(commandLineOptions.getKeyType(), commandLineOptions.getBaseDirectory(), commandLineOptions.getOrganizationalUnit());
 
         File truststoreFile = testPKI.getOrCreateTruststoreFile();
         File caPemFile = testPKI.getOrCreateCaPemFile();
@@ -101,19 +102,33 @@ public class TestPKI {
      * @param keyType       the desired key algorithm and size
      * @param baseDirectory the directory in which to create files (optional)
      */
-    @SneakyThrows
     public TestPKI(@NonNull KeyType keyType, @Nullable File baseDirectory) {
+        this(keyType, baseDirectory, null);
+    }
+
+    /**
+     * Constructs a TestPKI instance that will use the specified key algorithm and size, create files in
+     * the specified base directory, and use the specified organizational unit ({@code OU=}) as part of the subject
+     * of all certificates. If a base directory is not provided, temporary files will be created.
+     * If an organizational unit is not provided, {@value #DEFAULT_ORGANIZATIONAL_UNIT} will be used.
+     *
+     * @param keyType            the desired key algorithm and size
+     * @param baseDirectory      the directory in which to create files (optional)
+     * @param organizationalUnit the organizational unit to use in certificate subjects (optional)
+     */
+    @SneakyThrows
+    public TestPKI(@NonNull KeyType keyType, @Nullable File baseDirectory, @Nullable String organizationalUnit) {
         this.keyType = keyType;
         if (baseDirectory != null && !Files.isDirectory(baseDirectory.toPath())) {
             throw new IllegalArgumentException("baseDirectory, if specified, must be an existing directory: " + baseDirectory);
         }
         this.baseDirectory = baseDirectory;
+        this.organizationalUnit = organizationalUnit != null && !organizationalUnit.trim().isEmpty()  ? organizationalUnit : DEFAULT_ORGANIZATIONAL_UNIT;
         serialNumber = new AtomicLong(1);
         caCertificates = new LinkedHashMap<>();
 
         rootCertificate = newCertificate(new HeldCertificate.Builder()
                 .commonName("Root CA")
-                .organizationalUnit(ORGANIZATIONAL_UNIT)
                 .serialNumber(serialNumber.getAndIncrement())
                 .certificateAuthority(1)
         );
@@ -121,7 +136,6 @@ public class TestPKI {
 
         intermediateCertificate = newCertificate(new HeldCertificate.Builder()
                 .commonName("Intermediate CA")
-                .organizationalUnit(ORGANIZATIONAL_UNIT)
                 .serialNumber(serialNumber.getAndIncrement())
                 .certificateAuthority(0)
                 .signedBy(rootCertificate)
@@ -282,6 +296,7 @@ public class TestPKI {
             default:
                 throw new RuntimeException("unexpected KeyType: " + keyType.name());
         }
+        builder.organizationalUnit(organizationalUnit);
         HeldCertificate certificate = builder.build();
         log.info("issued certificate {}: {}", certificate.certificate().getSerialNumber(), certificate.certificate().getSubjectX500Principal());
         return certificate;
@@ -290,7 +305,6 @@ public class TestPKI {
     private HeldCertificate newCertificate(String commonName, Set<String> subjectAlternativeNames) {
         HeldCertificate.Builder builder = new HeldCertificate.Builder()
                 .commonName(commonName)
-                .organizationalUnit(ORGANIZATIONAL_UNIT)
                 .serialNumber(serialNumber.getAndIncrement())
                 .signedBy(intermediateCertificate);
         for (String san : subjectAlternativeNames) {
