@@ -23,4 +23,26 @@ class TestPKICertificateTest {
                 () -> assertThat(certificate.getKeyPem()).startsWith("-----BEGIN PRIVATE KEY-----")
         );
     }
+
+    @Test
+    void testDefaultOrganizationalUnit() {
+        TestPKI testPKI = new TestPKI(KeyType.ECDSA_256, null, null);
+        TestPKICertificate certificate = testPKI.getOrCreateClientCertificate();
+        assertAll(
+                () -> assertThat(certificate.getIssuerDN()).isEqualTo("CN=Intermediate CA,OU=TestPKI"),
+                () -> assertThat(certificate.getSubjectDN()).isEqualTo("CN=client,OU=TestPKI")
+        );
+    }
+
+    @Test
+    void testCustomOrganizationalUnit() {
+        TestPKI testPKI = new TestPKI(KeyType.ECDSA_256, null, "My Unit");
+        TestPKICertificate certificate = testPKI.getOrCreateClientCertificate();
+        TestPKICertificate root = testPKI.getCertificateBySerialNumber(1);
+        assertAll(
+                () -> assertThat(root.getSubjectDN()).isEqualTo("CN=Root CA,OU=My Unit"),
+                () -> assertThat(certificate.getIssuerDN()).isEqualTo("CN=Intermediate CA,OU=My Unit"),
+                () -> assertThat(certificate.getSubjectDN()).isEqualTo("CN=client,OU=My Unit")
+        );
+    }
 }
