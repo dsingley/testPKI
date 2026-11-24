@@ -53,7 +53,7 @@ testPKI can be run stand alone to create common PKI artifacts.
 
 Usage:
 ```
-java TestPKI <base directory> [--export [variable name prefix]] [--keyType ECDSA_256|RSA_2048] [--organizationalUnit <ou value>]
+java TestPKI <base directory> [--export [variable name prefix]] [--keyType ECDSA_256|RSA_2048|RSA_4096] [--organizationalUnit <ou value>]
 ```
 
 For example, the following invocation will create eight files in the `/tmp` directory and output 11

@@ -12,7 +12,10 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.net.InetAddress;
 import java.nio.file.Files;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
 import java.security.KeyStore;
+import java.security.SecureRandom;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.Collection;
@@ -293,6 +296,9 @@ public class TestPKI {
             case RSA_2048:
                 builder.rsa2048();
                 break;
+            case RSA_4096:
+                builder.keyPair(generateRsaKeyPair(4096));
+                break;
             default:
                 throw new RuntimeException("unexpected KeyType: " + keyType.name());
         }
@@ -300,6 +306,13 @@ public class TestPKI {
         HeldCertificate certificate = builder.build();
         log.info("issued certificate {}: {}", certificate.certificate().getSerialNumber(), certificate.certificate().getSubjectX500Principal());
         return certificate;
+    }
+
+    @SneakyThrows
+    private static KeyPair generateRsaKeyPair(int keySize) {
+        KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
+        generator.initialize(keySize, new SecureRandom());
+        return generator.generateKeyPair();
     }
 
     private HeldCertificate newCertificate(String commonName, Set<String> subjectAlternativeNames) {

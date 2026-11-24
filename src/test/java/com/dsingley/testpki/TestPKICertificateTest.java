@@ -1,6 +1,12 @@
 package com.dsingley.testpki;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+
+import java.security.PublicKey;
+import java.security.interfaces.ECPublicKey;
+import java.security.interfaces.RSAPublicKey;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
@@ -21,6 +27,26 @@ class TestPKICertificateTest {
                 () -> assertThat(certificate.getPublicKeyFingerprintSHA256()).matches("[0-9a-f]{64}"),
                 () -> assertThat(certificate.getCertPem()).startsWith("-----BEGIN CERTIFICATE-----"),
                 () -> assertThat(certificate.getKeyPem()).startsWith("-----BEGIN PRIVATE KEY-----")
+        );
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "ECDSA_256, EC, 256",
+            "RSA_2048, RSA, 2048",
+            "RSA_4096, RSA, 4096"
+    })
+    void testKeyType(KeyType keyType, String expectedAlgorithm, int expectedKeySize) {
+        TestPKI testPKI = new TestPKI(keyType, null);
+        TestPKICertificate certificate = testPKI.getOrCreateServerCertificate();
+        PublicKey publicKey = certificate.getKeyPair().getPublic();
+        int keySize = publicKey instanceof RSAPublicKey
+                ? ((RSAPublicKey) publicKey).getModulus().bitLength()
+                : ((ECPublicKey) publicKey).getParams().getOrder().bitLength();
+        assertAll(
+                () -> assertThat(publicKey.getAlgorithm()).isEqualTo(expectedAlgorithm),
+                () -> assertThat(keySize).isEqualTo(expectedKeySize),
+                () -> assertThat(certificate.getX509Certificate().getSigAlgName()).startsWith("SHA256with")
         );
     }
 
